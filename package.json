@@ -2,9 +2,13 @@
   "name": "bomlint",
   "version": "1.0.0",
   "description": "Align dependencies across projects.",
-  "bin": {
-    "bomlint": "./bin/bomlint.js",
-    "bomlintall": "./bin/bomlintall.sh"
+  "author": {
+    "name": "Frank Wagner",
+    "email": "agilecoderfrank@gmail.com"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/frawa/bomlint"
   },
   "license": "MIT",
   "files": [
@@ -12,7 +16,11 @@
     "README.md",
     "LICENSE"
   ],
-  "engines" : { 
-    "node" : ">=16.0.0"
+  "bin": {
+    "bomlint": "./bin/bomlint.js",
+    "bomlintall": "./bin/bomlintall.sh"
+  },
+  "engines": {
+    "node": ">=16.0.0"
   }
 }
