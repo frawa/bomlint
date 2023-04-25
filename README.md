@@ -1,5 +1,7 @@
 # bomlint - Align dependencies across projects
 
+## Getting started
+
 Usage in `package.json`:
 ```
 ...
@@ -22,10 +24,22 @@ Uses first `.bomlint.json` file following parent folders, like:
     "typescript": "^4.0.2",
 }
 ```
+## Draft your initial `.bomlint.json` file
 
-A use scenario in a workspace:
+Try this script:
+```
+git ls-files --cached \
+    | grep package.json \
+    | xargs -L1 jq '[.dependencies, .peerDependencies, .devDependencies | .? | to_entries] | flatten | unique | from_entries' \
+    | jq -s '[.[] | to_entries] | flatten | sort_by(.key) | reduce .[] as $dot ({}; .[$dot.key] += "|"+$dot.value)'
+```
+Do not forget to edit the versions!
+
+## A use scenario in a workspace
+
 - create your initial `.bomlint.json` file with dependencies you want to align across modules
 - enable `bomlint` for your first package (see above)
+
 - run script `bomlint` to check alignment
 - if versions differ, use `bomlint --merge` and edit `.bomlint.json` to keep only the versions you want
 - run script `bomlint:check` to apply versions to this package
