@@ -334,5 +334,35 @@ describe('collect deps', function () {
         expect(r.get("bar")?.get("Y")).toEqual(new Set(["p1"]))
         expect(r.has("baz")).toBe(true);
         expect(r.get("baz")?.get("Z")).toEqual(new Set(["p1"]))
+    });
+    test('multi package', function() {
+        const r = collectDependencies([
+            {
+                path: 'p1',
+                packageJson: {
+                    dependencies: {
+                        "foo": "X",
+                        "bar": "Y",
+                        "baz": "Z"
+                    }
+                }
+            },
+            {
+                path: 'p2',
+                packageJson: {
+                    dependencies: {
+                        "foo": "X",
+                        "bar": "Y",
+                        "baz": "Z"
+                    }
+                }
+            }
+        ]);
+        expect(r.has("foo")).toBe(true);
+        expect(r.get("foo")?.get("X")).toEqual(new Set(["p1", "p2"]))
+        expect(r.has("bar")).toBe(true);
+        expect(r.get("bar")?.get("Y")).toEqual(new Set(["p1", "p2"]))
+        expect(r.has("baz")).toBe(true);
+        expect(r.get("baz")?.get("Z")).toEqual(new Set(["p1", "p2"]))
     })
 });
