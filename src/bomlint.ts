@@ -1,4 +1,4 @@
-import {IPackageJson} from "package-json-type";
+import {IDependencyMap, IPackageJson} from "package-json-type";
 import fs from "fs";
 import path from "path";
 
@@ -8,10 +8,81 @@ export interface CheckResult {
     readonly patchedPackageJson?: IPackageJson;
     readonly updates: readonly string[];
 }
-//
-// export function checkForDuplicates(packageJson: IPackageJson): StringDict {
-//     let d =
-// }
+
+export interface PackageToCheck {
+    readonly path: string;
+    readonly packageJson: IPackageJson;
+}
+
+export interface DependencyConflict {
+    readonly pkg: PackageToCheck;
+    readonly version: string;
+}
+
+export interface Conflict {
+    readonly dependency: string;
+    readonly conflicts: readonly DependencyConflict[];
+}
+
+function reduceDeps(pkg: PackageToCheck, dependencies: IDependencyMap | undefined, acc: Map<string,Map<string,Set<string>>>) {
+    if (dependencies) {
+        for (let [depName, version] of Object.entries(dependencies)) {
+            let depItem = acc.get(depName);
+            if (!depItem) {
+                depItem = new Map<string, Set<string>>();
+                acc.set(depName, depItem);
+            }
+            let versionItem = depItem.get(version);
+            if (!versionItem) {
+                versionItem = new Set<string>();
+                depItem.set(version, versionItem);
+            }
+            versionItem.add(pkg.path);
+        }
+    }
+}
+
+export function checkForConflictingDeps(packages: readonly PackageToCheck[]): Conflict[] {
+
+    const findPkgByPath = (path: string) => packages.find(p => p.path === path);
+
+    // create index of dependencies
+    // dep -> version -> paths
+    const depIndex = packages.reduce((acc, pkg) => {
+        reduceDeps(pkg, pkg.packageJson.dependencies, acc);
+        reduceDeps(pkg, pkg.packageJson.devDependencies, acc);
+        reduceDeps(pkg, pkg.packageJson.peerDependencies, acc);
+        return acc;
+    }, new Map<string,Map<string,Set<string>>>());
+
+    // now look for conflicts
+    const items: Conflict[] = [];
+
+    for (let [dependency, versions] of depIndex) {
+        if (versions.size > 1) {
+            const conflicts: DependencyConflict[] = [];
+            for (let [version, pkgPaths] of versions) {
+                for (let pkgPath of pkgPaths) {
+                    const pkg = findPkgByPath(pkgPath);
+                    if (pkg) {
+                        const dc: DependencyConflict = {
+                            pkg,
+                            version
+                        }
+                        conflicts.push(dc);
+                    }
+                }
+            }
+            const c: Conflict = {
+                conflicts,
+                dependency
+            }
+            items.push(c);
+        }
+    }
+
+    return items;
+}
 
 export function checkForUpdatesFromBom(bom: StringDict, packageJson: IPackageJson): CheckResult {
 

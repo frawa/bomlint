@@ -1,4 +1,10 @@
-import {checkForUpdatesFromBom, CheckResult, mergeIntoBom, StringDict} from "./bomlint";
+import {
+    checkForConflictingDeps,
+    checkForUpdatesFromBom, Conflict,
+    mergeIntoBom,
+    PackageToCheck,
+    StringDict
+} from "./bomlint";
 import {IPackageJson} from "package-json-type";
 
 function expectSuccess(bom: StringDict, packageJson: IPackageJson) {
@@ -162,4 +168,79 @@ describe('bomlint merge', function () {
         });
     });
 
+});
+
+describe('conflicting deps', function() {
+    test('no conflicts', function() {
+       const r = checkForConflictingDeps([
+            { path: "p1", packageJson: { dependencies: { "foo": "X" }}},
+            { path: "p2", packageJson: { dependencies: { "foo": "X" }}},
+       ]);
+       expect(r).toEqual([]);
+    });
+    test('conflict in single package', function() {
+        const p: PackageToCheck = {
+            path: "p1",
+            packageJson: {
+                dependencies: {
+                    "foo": "X"
+                },
+                devDependencies: {
+                    "foo": "Y"
+                }
+            }
+        };
+        const r = checkForConflictingDeps([p]);
+        const e: Conflict[] = [
+            {
+                dependency: "foo",
+                conflicts: [
+                    {
+                        pkg: p,
+                        version: "X"
+                    },
+                    {
+                        pkg: p,
+                        version: "Y"
+                    }
+                ]
+            }
+        ];
+        expect(r).toEqual(e);
+    });
+    test('conflict in different packages', function() {
+        const p1: PackageToCheck = {
+            path: "p1",
+            packageJson: {
+                dependencies: {
+                    "foo": "X"
+                }
+            }
+        };
+        const p2: PackageToCheck = {
+            path: "p2",
+            packageJson: {
+                devDependencies: {
+                    "foo": "Y"
+                }
+            }
+        };
+        const r = checkForConflictingDeps([ p1, p2 ]);
+        const e: Conflict[] = [
+            {
+                dependency: "foo",
+                conflicts: [
+                    {
+                        pkg: p1,
+                        version: "X"
+                    },
+                    {
+                        pkg: p2,
+                        version: "Y"
+                    }
+                ]
+            }
+        ];
+        expect(r).toEqual(e);
+    });
 });

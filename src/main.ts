@@ -2,7 +2,14 @@
 
 // Align versions in a package.json file with versions in a .bomlint.json file.
 
-import {checkForUpdatesFromBom, findBomPath, mergeIntoBom, StringDict} from "./bomlint";
+import {
+    checkForConflictingDeps,
+    checkForUpdatesFromBom,
+    findBomPath,
+    mergeIntoBom,
+    PackageToCheck,
+    StringDict
+} from "./bomlint";
 const { Command } = require("commander");
 const program = new Command();
 const myPackageJson  = require("../package.json");
@@ -41,9 +48,11 @@ if (!fs.existsSync(bomPath)) {
 console.log("Using BOM file " + bomPath);
 const bom = JSON.parse(fs.readFileSync(bomPath))
 
-const pathsArg: string[] = program.args[0] ?? ["package.json"];
+const pathsArg: string[] = program.args ?? ["package.json"];
 
 let exitCode = 0;
+
+let packagesToCheck: PackageToCheck[] = [];
 
 pathsArg.forEach(pathArg => {
     const packageJsonPath = path.relative(cwd, pathArg)
@@ -54,6 +63,11 @@ pathsArg.forEach(pathArg => {
     }
 
     const packageJson = JSON.parse(fs.readFileSync(packageJsonPath))
+
+    packagesToCheck.push({
+        path: pathArg,
+        packageJson: packageJson
+    });
 
     if (merge) {
         console.log(`Merging ${packageJsonPath} into BOM ${bomPath}.`)
@@ -78,6 +92,15 @@ pathsArg.forEach(pathArg => {
             }
         }
     }
-})
+});
+
+const conflictingDeps = checkForConflictingDeps(packagesToCheck);
+if (conflictingDeps.length > 0) {
+    console.log(`${conflictingDeps.length} conflicting dep(s) found :`);
+    conflictingDeps.forEach(conflictingDep => {
+       console.log(conflictingDep.dependency, conflictingDep.conflicts.map(c => [c.version, c.pkg.path]));
+    });
+    exitCode = 1;
+}
 
 process.exit(exitCode);
