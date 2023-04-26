@@ -155,22 +155,23 @@ export interface MergeResult {
     readonly count: number;
 }
 
-export function mergeIntoBom(packageJson: IPackageJson, bom: StringDict): MergeResult {
-    const all: StringDict = {
-        ...packageJson.dependencies,
-        ...packageJson.peerDependencies,
-        ...packageJson.devDependencies,
-    }
+export function mergeIntoBom(packages: readonly PackageToCheck[], bom: StringDict): MergeResult {
 
-    const patchedBom: StringDict = Object.assign({}, bom);
+    const deps = collectDependencies(packages)
+    let patchedBom: StringDict = Object.assign({}, bom);
     let count = 0
-    for (let [pkg, version] of Object.entries(all)) {
-        const bomVersion = patchedBom[pkg]
-        if (bomVersion && bomVersion !== version) {
-            patchedBom[pkg] = `${bomVersion} || ${version}`
-            count++
-        } else {
-            patchedBom[pkg] = version
+    for (let [dependency, versions] of deps) {
+        const bomVersion = bom[dependency];
+        if (bomVersion) {
+            const allVersions = [
+                ...new Set(
+                    [ bomVersion ].concat(
+                        Array.from(versions.keys())
+                    )
+                )
+            ].sort();
+            patchedBom[dependency] = allVersions.join(" || ");
+            count++;
         }
     }
 

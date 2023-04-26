@@ -134,31 +134,97 @@ describe('bomlint check', function () {
 describe('bomlint merge', function () {
     test('empty merge', function() {
         const r = mergeIntoBom(
-            {},
+            [],
             {}
         );
         expect(r.patchedBom).toEqual({});
     });
     test('not in BOM', function() {
         const r = mergeIntoBom(
-            {
-                dependencies: {
-                    "foo": "X"
+            [
+                {
+                    path: "p1",
+                    packageJson: {
+                        dependencies: {
+                            "foo": "X"
+                        }
+                    }
                 }
-            },
+            ],
             {}
         );
-        expect(r.patchedBom).toEqual({
-            "foo": "X"
-        });
+        expect(r.patchedBom).toEqual({});
     })
     test('merge', function() {
         const r = mergeIntoBom(
-            {
-                dependencies: {
-                    "foo": "Y"
+            [
+                {
+                    path: "p1",
+                    packageJson: {
+                        dependencies: {
+                            "foo": "Y"
+                        }
+                    }
                 }
-            },
+            ],
+            {
+                "foo": "X"
+            }
+        );
+        expect(r.patchedBom).toEqual({
+            "foo": "X || Y"
+        });
+    });
+    test('merge multiple packages', function() {
+        const r = mergeIntoBom(
+            [
+                {
+                    path: "p1",
+                    packageJson: {
+                        dependencies: {
+                            "foo": "Y"
+                        }
+                    }
+                },
+                {
+                    path: "p2",
+                    packageJson: {
+                        dependencies: {
+                            "foo": "Z"
+                        }
+                    }
+                }
+
+            ],
+            {
+                "foo": "X"
+            }
+        );
+        expect(r.patchedBom).toEqual({
+            "foo": "X || Y || Z"
+        });
+    });
+    test('merge multiple packages 2', function() {
+        const r = mergeIntoBom(
+            [
+                {
+                    path: "p1",
+                    packageJson: {
+                        dependencies: {
+                            "foo": "X"
+                        }
+                    }
+                },
+                {
+                    path: "p2",
+                    packageJson: {
+                        dependencies: {
+                            "foo": "Y"
+                        }
+                    }
+                }
+
+            ],
             {
                 "foo": "X"
             }
