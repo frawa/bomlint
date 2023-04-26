@@ -71,11 +71,16 @@ function checkForUpdatesFromBom(bom, packageJson, fix) {
         }
         if (hasDifferentVersion(packageJson.peerDependencies, package, version)) {
             packageJson.peerDependencies[package] = version
-            updates.push(package)
+            updates.push(package + " (peer)");
         }
         if (hasDifferentVersion(packageJson.devDependencies, package, version)) {
             packageJson.devDependencies[package] = version
-            updates.push(package)
+            updates.push(package + " (dev)");
+        }
+        const packageVersion = packageJson.version
+        if (package === packageJson.name && packageVersion !== version) {
+            packageJson[version] = version;
+            updates.push(package + " (self)");
         }
     }
 
@@ -93,7 +98,13 @@ function checkForUpdatesFromBom(bom, packageJson, fix) {
 }
 
 function hasDifferentVersion(deps, package, version) {
-    return deps && deps[package] && deps[package] !== version
+    if (!deps) {
+        return false
+    }
+    if (!deps[package]) {
+        return false
+    }
+    return deps[package] !== version
 }
 
 function mergeIntoBom(packageJson, bom) {
