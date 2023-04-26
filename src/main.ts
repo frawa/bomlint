@@ -20,7 +20,7 @@ program
     .name("bomlint")
     .version(myPackageJson.version)
     .description("Checks package dependencies against BOM")
-    .option("--allow-conflicts [dependencies...]", "Allow conflicts for the dependency (in case you need different versions of the same dep")
+    .option("--allow-conflicts <dependencies>]", "Allow conflicts for the dependencies (comma-separated)")
     .option("--fix", "Apply bom file to package dependencies")
     .option("--merge", "Add package dependencies to BOM file")
     .option("--bom <bomfile>", "Path to BOM file")
@@ -48,6 +48,12 @@ if (!fs.existsSync(bomPath)) {
 
 console.log("Using BOM file " + bomPath);
 const bom = JSON.parse(fs.readFileSync(bomPath))
+
+const allowConflicts: Set<string> = new Set();
+if (options.allowConflicts) {
+    options.allowConflicts.split(",").forEach((ac: string) => allowConflicts.add(ac));
+    console.log("Allowing conflicts", Array.from(allowConflicts).sort());
+}
 
 const pathsArg: string[] = program.args ?? ["package.json"];
 
@@ -94,12 +100,6 @@ pathsArg.forEach(pathArg => {
         }
     }
 });
-
-const allowConflicts: Set<string> = new Set();
-if (Array.isArray(options.allowConflicts)) {
-    options.allowConflicts.forEach((ac: string) => allowConflicts.add(ac));
-    console.log("Allowing conflicts", Array.from(allowConflicts).sort());
-}
 
 const conflictingDeps = checkForConflictingDeps(packagesToCheck, allowConflicts);
 if (conflictingDeps.length > 0) {
