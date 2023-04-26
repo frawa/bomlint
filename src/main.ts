@@ -3,20 +3,32 @@
 // Align versions in a package.json file with versions in a .bomlint.json file.
 
 import {checkForUpdatesFromBom, StringDict} from "./bomlint";
+const { Command } = require("commander");
 
-if (process.argv.includes("--help")) {
-    console.log("bomlint [[--fix] | [--merge] | [--help]] [<path to package.json>])")
-    console.log("\t        \tCheck this package dependencies against BOM file.")
-    console.log("\t--help  \tThis message.")
-    console.log("\t--fix   \tApply BOM file to this package dependencies.")
-    console.log("\t--merge \tAdd this package dependencies to BOM file.")
-    process.exit(0)
+const program = new Command();
+
+const myPackageJson  = require("../package.json");
+
+program
+    .name("bomlint")
+    .version(myPackageJson.version)
+    .description("Checks package dependencies against BOM")
+    .option("--fix", "Apply bom file to package dependencies")
+    .option("--merge", "Add package dependencies to BOM file")
+    // .argument("[<file...>]", "package.json file(s) to be checked/fixed", "package.json")
+    .parse(process.argv)
+
+const options = program.opts();
+
+const merge = options.merge ?? false; //process.argv.includes("--merge")
+const fix = options.fix ?? false; // process.argv.includes("--fix")
+
+if (merge && fix) {
+    console.log("merge and fix cannot be used together");
+    process.exit(1)
 }
 
-const merge = process.argv.includes("--merge")
-const fix = process.argv.includes("--fix")
-
-const pathArg = process.argv.find((arg, i) => i > 1 && !arg.startsWith('--')) || "package.json"
+const pathArg = program.args[0] ?? "package.json";
 
 const fs = require('fs')
 const path = require('path');
@@ -28,7 +40,6 @@ if (!fs.existsSync(packageJsonPath)) {
     console.log(`No package file ${packageJsonPath}.`)
     process.exit(1)
 }
-
 
 const homePath = require('os').homedir();
 const bomPath = path.relative(cwd, findBomPath(cwd))

@@ -23,7 +23,7 @@
   "main": "./bin/bomlint",
   "scripts": {
     "clean": "rimraf ./dist",
-    "compile:ts": "tsc",
+    "build:ts": "tsc",
     "test": "jest",
     "build": "npm run clean && npm run compile:ts && npm run test"
   },
@@ -37,5 +37,8 @@
     "rimraf": "^5.0.0",
     "ts-jest": "^29.1.0",
     "typescript": "^5.0.4"
+  },
+  "dependencies": {
+    "commander": "^10.0.1"
   }
 }
