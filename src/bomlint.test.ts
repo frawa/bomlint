@@ -1,6 +1,6 @@
 import {
     checkForConflictingDeps,
-    checkForUpdatesFromBom, Conflict,
+    checkForUpdatesFromBom, collectDependencies, Conflict,
     mergeIntoBom,
     PackageToCheck,
     StringDict
@@ -304,4 +304,35 @@ describe('conflicting deps', function() {
         ];
         expect(r).toEqual(e);
     });
+});
+
+describe('collect deps', function () {
+    test('no deps', function() {
+        const r = collectDependencies([])
+        expect(r).toEqual(new Map());
+    });
+    test('one package', function() {
+        const r = collectDependencies([
+            {
+                path: 'p1',
+                packageJson: {
+                    dependencies: {
+                        "foo": "X"
+                    },
+                    devDependencies: {
+                        "bar": "Y"
+                    },
+                    peerDependencies: {
+                        "baz": "Z"
+                    }
+                }
+            }
+        ]);
+        expect(r.has("foo")).toBe(true);
+        expect(r.get("foo")?.get("X")).toEqual(new Set(["p1"]))
+        expect(r.has("bar")).toBe(true);
+        expect(r.get("bar")?.get("Y")).toEqual(new Set(["p1"]))
+        expect(r.has("baz")).toBe(true);
+        expect(r.get("baz")?.get("Z")).toEqual(new Set(["p1"]))
+    })
 });

@@ -44,18 +44,20 @@ function reduceDeps(pkg: PackageToCheck, dependencies: IDependencyMap | undefine
     }
 }
 
+export function collectDependencies(packages: readonly PackageToCheck[], skipPackages: Set<string> = new Set()): Map<string,Map<string,Set<string>>> {
+    // dep -> version -> paths
+    return packages.reduce((acc, pkg) => {
+        reduceDeps(pkg, pkg.packageJson.dependencies, acc, skipPackages);
+        reduceDeps(pkg, pkg.packageJson.devDependencies, acc, skipPackages);
+        reduceDeps(pkg, pkg.packageJson.peerDependencies, acc, skipPackages);
+        return acc;
+    }, new Map<string,Map<string,Set<string>>>());
+}
+
 export function checkForConflictingDeps(packages: readonly PackageToCheck[], allowConflicts: Set<string> = new Set()): Conflict[] {
 
     const findPkgByPath = (path: string) => packages.find(p => p.path === path);
-
-    // create index of dependencies
-    // dep -> version -> paths
-    const depIndex = packages.reduce((acc, pkg) => {
-        reduceDeps(pkg, pkg.packageJson.dependencies, acc, allowConflicts);
-        reduceDeps(pkg, pkg.packageJson.devDependencies, acc, allowConflicts);
-        reduceDeps(pkg, pkg.packageJson.peerDependencies, acc, allowConflicts);
-        return acc;
-    }, new Map<string,Map<string,Set<string>>>());
+    const depIndex = collectDependencies(packages, allowConflicts);
 
     // now look for conflicts
     const items: Conflict[] = [];
