@@ -110,6 +110,19 @@ describe('bomlint check', function () {
         expect(r.patchedPackageJson?.devDependencies?.bar).toEqual("Y2");
         expect(r.patchedPackageJson?.peerDependencies?.baz).toEqual("Z");
     });
+    test('failing dups in same package', function() {
+        const r = checkForUpdatesFromBom(
+            {},
+            {
+                dependencies: {
+                    "foo": "X"
+                },
+                devDependencies: {
+                    "foo": "Y"
+                }
+            }
+        );
+    })
 });
 
 describe('bomlint merge', function () {
@@ -120,15 +133,19 @@ describe('bomlint merge', function () {
         );
         expect(r.patchedBom).toEqual({});
     });
-    test('empty merge', function() {
+    test('merge', function() {
         const r = mergeIntoBom(
             {
-                "foo": "X"
+                dependencies: {
+                    "foo": "Y"
+                }
             },
-            {}
+            {
+                "foo": "X"
+            }
         );
         expect(r.patchedBom).toEqual({
-            "foo": "X"
+            "foo": "X || Y"
         });
     });
 

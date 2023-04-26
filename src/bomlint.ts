@@ -8,6 +8,10 @@ export interface CheckResult {
     readonly patchedPackageJson?: IPackageJson;
     readonly updates: readonly string[];
 }
+//
+// export function checkForDuplicates(packageJson: IPackageJson): StringDict {
+//     let d =
+// }
 
 export function checkForUpdatesFromBom(bom: StringDict, packageJson: IPackageJson): CheckResult {
 
