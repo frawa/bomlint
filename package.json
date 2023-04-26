@@ -24,6 +24,7 @@
   "scripts": {
     "clean": "rimraf ./dist",
     "build:ts": "tsc",
+    "watch": "tsc -w",
     "test": "jest",
     "build": "npm run clean && npm run compile:ts && npm run test"
   },
@@ -33,6 +34,7 @@
   "devDependencies": {
     "@types/jest": "^29.5.1",
     "jest": "^29.5.0",
+    "nodemon": "^2.0.22",
     "package-json-type": "^1.0.3",
     "rimraf": "^5.0.0",
     "ts-jest": "^29.1.0",

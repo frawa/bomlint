@@ -1,4 +1,4 @@
-import {checkForUpdatesFromBom, CheckResult, StringDict} from "./bomlint";
+import {checkForUpdatesFromBom, CheckResult, mergeIntoBom, StringDict} from "./bomlint";
 import {IPackageJson} from "package-json-type";
 
 function expectSuccess(bom: StringDict, packageJson: IPackageJson) {
@@ -28,7 +28,7 @@ const packageJsonMixed: IPackageJson = {
 };
 
 
-describe('bomlint', function () {
+describe('bomlint check', function () {
     test('empty bom empty deps', function () {
         expectSuccess(
             {},
@@ -110,4 +110,26 @@ describe('bomlint', function () {
         expect(r.patchedPackageJson?.devDependencies?.bar).toEqual("Y2");
         expect(r.patchedPackageJson?.peerDependencies?.baz).toEqual("Z");
     });
+});
+
+describe('bomlint merge', function () {
+    test('empty merge', function() {
+        const r = mergeIntoBom(
+            {},
+            {}
+        );
+        expect(r.patchedBom).toEqual({});
+    });
+    test('empty merge', function() {
+        const r = mergeIntoBom(
+            {
+                "foo": "X"
+            },
+            {}
+        );
+        expect(r.patchedBom).toEqual({
+            "foo": "X"
+        });
+    });
+
 });

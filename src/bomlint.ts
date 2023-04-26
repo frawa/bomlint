@@ -1,4 +1,6 @@
 import {IPackageJson} from "package-json-type";
+import fs from "fs";
+import path from "path";
 
 export type StringDict = { [key: string]: string };
 
@@ -67,4 +69,47 @@ export function checkForUpdatesFromBom(bom: StringDict, packageJson: IPackageJso
 
 function hasDifferentVersion(deps: any, pkg: string, version: string) {
     return deps && deps[pkg] && deps[pkg] !== version
+}
+
+export interface MergeResult {
+    readonly patchedBom: StringDict;
+    readonly count: number;
+}
+
+export function mergeIntoBom(packageJson: IPackageJson, bom: StringDict): MergeResult {
+    const all: StringDict = {
+        ...packageJson.dependencies,
+        ...packageJson.peerDependencies,
+        ...packageJson.devDependencies,
+    }
+
+    const patchedBom: StringDict = Object.assign({}, bom);
+    let count = 0
+    for (let [pkg, version] of Object.entries(all)) {
+        const bomVersion = patchedBom[pkg]
+        if (bomVersion && bomVersion !== version) {
+            patchedBom[pkg] = `${bomVersion} || ${version}`
+            count++
+        } else {
+            patchedBom[pkg] = version
+        }
+    }
+
+    return {
+        patchedBom,
+        count
+    }
+}
+
+const homePath = require('os').homedir();
+
+export function findBomPath(dir: string): string {
+    const candidate = path.join(dir, ".bomlint.json")
+    if (fs.existsSync(candidate)) {
+        return candidate
+    }
+    if (dir === homePath) {
+        return ".bomlint.json"
+    }
+    return findBomPath(path.dirname(dir))
 }
