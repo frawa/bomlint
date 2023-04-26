@@ -243,4 +243,65 @@ describe('conflicting deps', function() {
         ];
         expect(r).toEqual(e);
     });
+    test('allow conflicts', function() {
+        const p1: PackageToCheck = {
+            path: "p1",
+            packageJson: {
+                dependencies: {
+                    "foo": "X",
+                    "bar": "Z"
+                }
+            }
+        };
+        const p2: PackageToCheck = {
+            path: "p2",
+            packageJson: {
+                devDependencies: {
+                    "foo": "Y",
+                    "bar": "Z"
+                }
+            }
+        };
+        const allowConflicts = new Set(["foo"]);
+        const r = checkForConflictingDeps([ p1, p2 ], allowConflicts);
+        expect(r).toEqual([]);
+    });
+    test('allow conflicts 2', function() {
+        const p1: PackageToCheck = {
+            path: "p1",
+            packageJson: {
+                dependencies: {
+                    "foo": "X",
+                    "bar": "Z1"
+                }
+            }
+        };
+        const p2: PackageToCheck = {
+            path: "p2",
+            packageJson: {
+                devDependencies: {
+                    "foo": "Y",
+                    "bar": "Z2"
+                }
+            }
+        };
+        const allowConflicts = new Set(["foo"]);
+        const r = checkForConflictingDeps([ p1, p2 ], allowConflicts);
+        const e: Conflict[] = [
+            {
+                dependency: "bar",
+                conflicts: [
+                    {
+                        pkg: p1,
+                        version: "Z1"
+                    },
+                    {
+                        pkg: p2,
+                        version: "Z2"
+                    }
+                ]
+            }
+        ];
+        expect(r).toEqual(e);
+    });
 });

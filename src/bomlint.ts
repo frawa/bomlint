@@ -24,34 +24,36 @@ export interface Conflict {
     readonly conflicts: readonly DependencyConflict[];
 }
 
-function reduceDeps(pkg: PackageToCheck, dependencies: IDependencyMap | undefined, acc: Map<string,Map<string,Set<string>>>) {
+function reduceDeps(pkg: PackageToCheck, dependencies: IDependencyMap | undefined, acc: Map<string,Map<string,Set<string>>>, allowConflicts: Set<string>) {
     if (dependencies) {
         for (let [depName, version] of Object.entries(dependencies)) {
-            let depItem = acc.get(depName);
-            if (!depItem) {
-                depItem = new Map<string, Set<string>>();
-                acc.set(depName, depItem);
+            if (!allowConflicts.has(depName)) {
+                let depItem = acc.get(depName);
+                if (!depItem) {
+                    depItem = new Map<string, Set<string>>();
+                    acc.set(depName, depItem);
+                }
+                let versionItem = depItem.get(version);
+                if (!versionItem) {
+                    versionItem = new Set<string>();
+                    depItem.set(version, versionItem);
+                }
+                versionItem.add(pkg.path);
             }
-            let versionItem = depItem.get(version);
-            if (!versionItem) {
-                versionItem = new Set<string>();
-                depItem.set(version, versionItem);
-            }
-            versionItem.add(pkg.path);
         }
     }
 }
 
-export function checkForConflictingDeps(packages: readonly PackageToCheck[]): Conflict[] {
+export function checkForConflictingDeps(packages: readonly PackageToCheck[], allowConflicts: Set<string> = new Set()): Conflict[] {
 
     const findPkgByPath = (path: string) => packages.find(p => p.path === path);
 
     // create index of dependencies
     // dep -> version -> paths
     const depIndex = packages.reduce((acc, pkg) => {
-        reduceDeps(pkg, pkg.packageJson.dependencies, acc);
-        reduceDeps(pkg, pkg.packageJson.devDependencies, acc);
-        reduceDeps(pkg, pkg.packageJson.peerDependencies, acc);
+        reduceDeps(pkg, pkg.packageJson.dependencies, acc, allowConflicts);
+        reduceDeps(pkg, pkg.packageJson.devDependencies, acc, allowConflicts);
+        reduceDeps(pkg, pkg.packageJson.peerDependencies, acc, allowConflicts);
         return acc;
     }, new Map<string,Map<string,Set<string>>>());
 

@@ -20,6 +20,7 @@ program
     .name("bomlint")
     .version(myPackageJson.version)
     .description("Checks package dependencies against BOM")
+    .option("--allow-conflicts [dependencies...]", "Allow conflicts for the dependency (in case you need different versions of the same dep")
     .option("--fix", "Apply bom file to package dependencies")
     .option("--merge", "Add package dependencies to BOM file")
     .option("--bom <bomfile>", "Path to BOM file")
@@ -94,7 +95,13 @@ pathsArg.forEach(pathArg => {
     }
 });
 
-const conflictingDeps = checkForConflictingDeps(packagesToCheck);
+const allowConflicts: Set<string> = new Set();
+if (Array.isArray(options.allowConflicts)) {
+    options.allowConflicts.forEach((ac: string) => allowConflicts.add(ac));
+    console.log("Allowing conflicts", Array.from(allowConflicts).sort());
+}
+
+const conflictingDeps = checkForConflictingDeps(packagesToCheck, allowConflicts);
 if (conflictingDeps.length > 0) {
     console.log(`${conflictingDeps.length} conflicting dep(s) found :`);
     conflictingDeps.forEach(conflictingDep => {
