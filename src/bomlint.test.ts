@@ -133,6 +133,19 @@ describe('bomlint merge', function () {
         );
         expect(r.patchedBom).toEqual({});
     });
+    test('not in BOM', function() {
+        const r = mergeIntoBom(
+            {
+                dependencies: {
+                    "foo": "X"
+                }
+            },
+            {}
+        );
+        expect(r.patchedBom).toEqual({
+            "foo": "X"
+        });
+    })
     test('merge', function() {
         const r = mergeIntoBom(
             {
