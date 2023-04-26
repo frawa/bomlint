@@ -1,4 +1,4 @@
-import {IDependencyMap, IPackageJson} from "package-json-type";
+import { IDependencyMap, IPackageJson } from "package-json-type";
 import fs from "fs";
 import path from "path";
 
@@ -24,7 +24,7 @@ export interface Conflict {
     readonly conflicts: readonly DependencyConflict[];
 }
 
-function reduceDeps(pkg: PackageToCheck, dependencies: IDependencyMap | undefined, acc: Map<string,Map<string,Set<string>>>, allowConflicts: Set<string>) {
+function reduceDeps(pkg: PackageToCheck, dependencies: IDependencyMap | undefined, acc: Map<string, Map<string, Set<string>>>, allowConflicts: Set<string>) {
     if (dependencies) {
         for (let [depName, version] of Object.entries(dependencies)) {
             if (!allowConflicts.has(depName)) {
@@ -51,7 +51,7 @@ export function collectDependencies(packages: readonly PackageToCheck[], skipPac
         reduceDeps(pkg, pkg.packageJson.devDependencies, acc, skipPackages);
         reduceDeps(pkg, pkg.packageJson.peerDependencies, acc, skipPackages);
         return acc;
-    }, new Map<string,Map<string,Set<string>>>());
+    }, new Map<string, Map<string, Set<string>>>());
 }
 
 export function checkForConflictingDeps(packages: readonly PackageToCheck[], allowConflicts: Set<string> = new Set()): Conflict[] {
@@ -180,6 +180,26 @@ export function mergeIntoBom(packages: readonly PackageToCheck[], bom: StringDic
         count
     }
 }
+
+export interface PruneResult {
+    readonly patchedBom: StringDict;
+    readonly count: number;
+}
+
+export function pruneFromBom(bom: StringDict, packageJsons: readonly IPackageJson[]): PruneResult {
+    if (packageJsons.length <= 1) {
+        return { patchedBom: {...bom}, count: 0 };
+    }
+
+    const packageSets = packageJsons.map(p => new Set(Object.keys({ ...p.dependencies, ...p.devDependencies, ...p.peerDependencies })))
+    const counts = new Map(Object.keys(bom).map(pkg => [pkg,packageSets.filter(set => set.has(pkg)).length]))
+
+    const patchedBom: StringDict = Object.fromEntries(Object.entries(bom).filter(([pkg, _]) => (counts.get(pkg) ?? 0) > 1))
+    const count = Object.keys(bom).length - Object.keys(patchedBom).length
+
+    return { patchedBom, count };
+}
+
 
 const homePath = require('os').homedir();
 

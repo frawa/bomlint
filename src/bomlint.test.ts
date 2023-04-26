@@ -3,9 +3,10 @@ import {
     checkForUpdatesFromBom, collectDependencies, Conflict,
     mergeIntoBom,
     PackageToCheck,
+    pruneFromBom,
     StringDict
 } from "./bomlint";
-import {IPackageJson} from "package-json-type";
+import { IPackageJson } from "package-json-type";
 
 function expectSuccess(bom: StringDict, packageJson: IPackageJson) {
     const r = checkForUpdatesFromBom(bom, packageJson)
@@ -116,7 +117,7 @@ describe('bomlint check', function () {
         expect(r.patchedPackageJson?.devDependencies?.bar).toEqual("Y2");
         expect(r.patchedPackageJson?.peerDependencies?.baz).toEqual("Z");
     });
-    test('failing dups in same package', function() {
+    test('failing dups in same package', function () {
         const r = checkForUpdatesFromBom(
             {},
             {
@@ -132,14 +133,14 @@ describe('bomlint check', function () {
 });
 
 describe('bomlint merge', function () {
-    test('empty merge', function() {
+    test('empty merge', function () {
         const r = mergeIntoBom(
             [],
             {}
         );
         expect(r.patchedBom).toEqual({});
     });
-    test('not in BOM', function() {
+    test('not in BOM', function () {
         const r = mergeIntoBom(
             [
                 {
@@ -236,15 +237,15 @@ describe('bomlint merge', function () {
 
 });
 
-describe('conflicting deps', function() {
-    test('no conflicts', function() {
-       const r = checkForConflictingDeps([
-            { path: "p1", packageJson: { dependencies: { "foo": "X" }}},
-            { path: "p2", packageJson: { dependencies: { "foo": "X" }}},
-       ]);
-       expect(r).toEqual([]);
+describe('conflicting deps', function () {
+    test('no conflicts', function () {
+        const r = checkForConflictingDeps([
+            { path: "p1", packageJson: { dependencies: { "foo": "X" } } },
+            { path: "p2", packageJson: { dependencies: { "foo": "X" } } },
+        ]);
+        expect(r).toEqual([]);
     });
-    test('conflict in single package', function() {
+    test('conflict in single package', function () {
         const p: PackageToCheck = {
             path: "p1",
             packageJson: {
@@ -274,7 +275,7 @@ describe('conflicting deps', function() {
         ];
         expect(r).toEqual(e);
     });
-    test('conflict in different packages', function() {
+    test('conflict in different packages', function () {
         const p1: PackageToCheck = {
             path: "p1",
             packageJson: {
@@ -291,7 +292,7 @@ describe('conflicting deps', function() {
                 }
             }
         };
-        const r = checkForConflictingDeps([ p1, p2 ]);
+        const r = checkForConflictingDeps([p1, p2]);
         const e: Conflict[] = [
             {
                 dependency: "foo",
@@ -309,7 +310,7 @@ describe('conflicting deps', function() {
         ];
         expect(r).toEqual(e);
     });
-    test('allow conflicts', function() {
+    test('allow conflicts', function () {
         const p1: PackageToCheck = {
             path: "p1",
             packageJson: {
@@ -329,10 +330,10 @@ describe('conflicting deps', function() {
             }
         };
         const allowConflicts = new Set(["foo"]);
-        const r = checkForConflictingDeps([ p1, p2 ], allowConflicts);
+        const r = checkForConflictingDeps([p1, p2], allowConflicts);
         expect(r).toEqual([]);
     });
-    test('allow conflicts 2', function() {
+    test('allow conflicts 2', function () {
         const p1: PackageToCheck = {
             path: "p1",
             packageJson: {
@@ -352,7 +353,7 @@ describe('conflicting deps', function() {
             }
         };
         const allowConflicts = new Set(["foo"]);
-        const r = checkForConflictingDeps([ p1, p2 ], allowConflicts);
+        const r = checkForConflictingDeps([p1, p2], allowConflicts);
         const e: Conflict[] = [
             {
                 dependency: "bar",
@@ -431,4 +432,96 @@ describe('collect deps', function () {
         expect(r.has("baz")).toBe(true);
         expect(r.get("baz")?.get("Z")).toEqual(new Set(["p1", "p2"]))
     })
+});
+
+describe('bomlint prune', function () {
+    test('empty prune', function () {
+        const r = pruneFromBom(
+            {},
+            []
+        );
+        expect(r.patchedBom).toEqual({});
+    });
+    test('empty bom', function () {
+        const r = pruneFromBom(
+            {},
+            [{
+                dependencies: { foo: "13" }
+            }]
+        );
+        expect(r.patchedBom).toEqual({});
+    });
+    test('no packages', function () {
+        const r = pruneFromBom(
+            { foo: "13" },
+            []
+        );
+        expect(r).toEqual({
+            patchedBom: { foo: "13" },
+            count: 0
+        });
+    });
+    test('nothing to prune', function () {
+        const r = pruneFromBom(
+            { foo: "13" },
+            [{
+                dependencies: {
+                    foo: "13"
+                }
+            },
+            {
+                dependencies: {
+                    foo: "13"
+                }
+            }]
+        );
+        expect(r).toEqual({
+            patchedBom: {
+                foo: "13",
+            },
+            count: 0
+        });
+    });
+    test('prune it', function () {
+        const r = pruneFromBom(
+            {
+                foo: "13",
+                gnu: "1313",
+                bar: "0"
+            },
+            [{
+                dependencies: {
+                    foo: "13"
+                }
+            },
+            {
+                peerDependencies: {
+                    foo: "13",
+                    gnu: "1313"
+                }
+            }]
+        );
+        expect(r).toEqual({
+            patchedBom: {
+                foo: "13",
+            },
+            count: 2
+        });
+    });
+    test('do not prune single package json file', function () {
+        const r = pruneFromBom(
+            { foo: "13" },
+            [{
+                dependencies: {
+                    foo: "13"
+                }
+            }]
+        );
+        expect(r).toEqual({
+            patchedBom: {
+                foo: "13",
+            },
+            count: 0
+        });
+    });
 });
