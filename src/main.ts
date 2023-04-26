@@ -8,11 +8,12 @@ import {
     findBomPath,
     mergeIntoBom,
     PackageToCheck,
+    pruneFromBom,
     StringDict
 } from "./bomlint";
 const { Command } = require("commander");
 const program = new Command();
-const myPackageJson  = require("../package.json");
+const myPackageJson = require("../package.json");
 const fs = require('fs')
 const path = require('path');
 
@@ -23,6 +24,7 @@ program
     .option("--allow-conflicts <dependencies>]", "Allow conflicts for the dependencies (comma-separated)")
     .option("--fix", "Apply bom file to package dependencies")
     .option("--merge", "Add package dependencies to BOM file")
+    .option("--prune", "Remove redundant dependencies from BOM file")
     .option("--bom <bomfile>", "Path to BOM file")
     .argument("[<file...>]", "package.json file(s) to be checked/fixed", "package.json")
 
@@ -32,9 +34,11 @@ const options = program.opts();
 
 const merge = options.merge ?? false; //process.argv.includes("--merge")
 const fix = options.fix ?? false; // process.argv.includes("--fix")
+const prune = options.prune ?? false;
 
-if (merge && fix) {
-    console.log("merge and fix cannot be used together");
+
+if ([merge, fix, prune].filter(f => f).length === 1) {
+    console.log("can use only one of merge, fix or prune");
     process.exit(1)
 }
 
@@ -56,6 +60,19 @@ if (options.allowConflicts) {
 }
 
 const pathsArg: string[] = program.args ?? ["package.json"];
+
+if (prune) {
+    const packageJsons = pathsArg.map(arg => path.relative(cwd, arg))
+    console.log(`Pruning from BOM ${bomPath}, considering ${packageJsons.join(", ")}.`)
+    const r = pruneFromBom(bom, packageJsons)
+    if (r.count > 0) {
+        fs.writeFileSync(bomPath, JSON.stringify(r.patchedBom, null, 2))
+        console.log(`Pruned BOM written to ${bomPath}.`)
+    } else {
+        console.log(`No update needed.`)
+    }
+    process.exit(0)
+}
 
 let exitCode = 0;
 
@@ -105,7 +122,7 @@ const conflictingDeps = checkForConflictingDeps(packagesToCheck, allowConflicts)
 if (conflictingDeps.length > 0) {
     console.log(`${conflictingDeps.length} conflicting dep(s) found :`);
     conflictingDeps.forEach(conflictingDep => {
-       console.log(conflictingDep.dependency, conflictingDep.conflicts.map(c => [c.version, c.pkg.path]));
+        console.log(conflictingDep.dependency, conflictingDep.conflicts.map(c => [c.version, c.pkg.path]));
     });
     exitCode = 1;
 }

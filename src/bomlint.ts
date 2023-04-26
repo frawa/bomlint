@@ -184,8 +184,8 @@ export interface PruneResult {
 }
 
 export function pruneFromBom(bom: StringDict, packageJsons: readonly IPackageJson[]): PruneResult {
-    if (packageJsons.length === 0) {
-        return { patchedBom: bom, count: 0 };
+    if (packageJsons.length <= 1) {
+        return { patchedBom: {...bom}, count: 0 };
     }
 
     const packageSets = packageJsons.map(p => new Set(Object.keys({ ...p.dependencies, ...p.devDependencies, ...p.peerDependencies })))

@@ -381,4 +381,20 @@ describe('bomlint prune', function () {
             count: 2
         });
     });
+    test('do not prune single package json file', function () {
+        const r = pruneFromBom(
+            { foo: "13" },
+            [{
+                dependencies: {
+                    foo: "13"
+                }
+            }]
+        );
+        expect(r).toEqual({
+            patchedBom: {
+                foo: "13",
+            },
+            count: 0
+        });
+    });
 });
