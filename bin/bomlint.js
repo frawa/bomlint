@@ -98,13 +98,7 @@ function checkForUpdatesFromBom(bom, packageJson, fix) {
 }
 
 function hasDifferentVersion(deps, package, version) {
-    if (!deps) {
-        return false
-    }
-    if (!deps[package]) {
-        return false
-    }
-    return deps[package] !== version
+    return deps && deps[package] && deps[package] !== version
 }
 
 function mergeIntoBom(packageJson, bom) {
