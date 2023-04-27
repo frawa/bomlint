@@ -14,7 +14,8 @@
   "files": [
     "bin",
     "README.md",
-    "LICENSE"
+    "LICENSE",
+    "dist"
   ],
   "bin": {
     "bomlint": "./dist/main.js",
