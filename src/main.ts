@@ -37,7 +37,7 @@ const fix = options.fix ?? false; // process.argv.includes("--fix")
 const prune = options.prune ?? false;
 
 
-if ([merge, fix, prune].filter(f => f).length === 1) {
+if ([merge, fix, prune].filter(f => f).length > 1) {
     console.log("can use only one of merge, fix or prune");
     process.exit(1)
 }
