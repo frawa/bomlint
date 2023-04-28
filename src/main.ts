@@ -59,7 +59,7 @@ if (options.allowConflicts) {
     console.log("Allowing conflicts", Array.from(allowConflicts).sort());
 }
 
-const pathsArg: string[] = program.args ?? ["package.json"];
+const pathsArg: string[] = program.args.length > 0 ? program.args : ["package.json"];
 
 if (prune) {
     const packageJsons = pathsArg.map(arg => path.relative(cwd, arg))
