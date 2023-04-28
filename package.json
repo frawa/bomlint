@@ -1,6 +1,6 @@
 {
   "name": "bomlint",
-  "version": "1.2.3",
+  "version": "1.2.4",
   "description": "Align dependencies across projects.",
   "author": {
     "name": "Frank Wagner",
