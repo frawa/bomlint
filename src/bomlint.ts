@@ -44,7 +44,7 @@ function reduceDeps(pkg: PackageToCheck, dependencies: IDependencyMap | undefine
     }
 }
 
-export function collectDependencies(packages: readonly PackageToCheck[], skipPackages: Set<string> = new Set()): Map<string,Map<string,Set<string>>> {
+export function collectDependencies(packages: readonly PackageToCheck[], skipPackages: Set<string> = new Set()): Map<string, Map<string, Set<string>>> {
     // dep -> version -> paths
     return packages.reduce((acc, pkg) => {
         reduceDeps(pkg, pkg.packageJson.dependencies, acc, skipPackages);
@@ -165,7 +165,7 @@ export function mergeIntoBom(packages: readonly PackageToCheck[], bom: StringDic
         if (bomVersion) {
             const allVersions = [
                 ...new Set(
-                    [ bomVersion ].concat(
+                    [bomVersion].concat(
                         Array.from(versions.keys())
                     )
                 )
@@ -188,11 +188,16 @@ export interface PruneResult {
 
 export function pruneFromBom(bom: StringDict, packageJsons: readonly IPackageJson[]): PruneResult {
     if (packageJsons.length <= 1) {
-        return { patchedBom: {...bom}, count: 0 };
+        return { patchedBom: { ...bom }, count: 0 };
     }
 
-    const packageSets = packageJsons.map(p => new Set(Object.keys({ ...p.dependencies, ...p.devDependencies, ...p.peerDependencies })))
-    const counts = new Map(Object.keys(bom).map(pkg => [pkg,packageSets.filter(set => set.has(pkg)).length]))
+    const packageSets = packageJsons.map(p => {
+        const set = new Set(Object.keys({ ...p.dependencies, ...p.devDependencies, ...p.peerDependencies }))
+        return p.name
+            ? set.add(p.name)
+            : set
+    })
+    const counts = new Map(Object.keys(bom).map(pkg => [pkg, packageSets.filter(set => set.has(pkg)).length]))
 
     const patchedBom: StringDict = Object.fromEntries(Object.entries(bom).filter(([pkg, _]) => (counts.get(pkg) ?? 0) > 1))
     const count = Object.keys(bom).length - Object.keys(patchedBom).length

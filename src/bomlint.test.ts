@@ -156,7 +156,7 @@ describe('bomlint merge', function () {
         );
         expect(r.patchedBom).toEqual({});
     })
-    test('merge', function() {
+    test('merge', function () {
         const r = mergeIntoBom(
             [
                 {
@@ -176,7 +176,7 @@ describe('bomlint merge', function () {
             "foo": "X || Y"
         });
     });
-    test('merge multiple packages', function() {
+    test('merge multiple packages', function () {
         const r = mergeIntoBom(
             [
                 {
@@ -205,7 +205,7 @@ describe('bomlint merge', function () {
             "foo": "X || Y || Z"
         });
     });
-    test('merge multiple packages 2', function() {
+    test('merge multiple packages 2', function () {
         const r = mergeIntoBom(
             [
                 {
@@ -374,11 +374,11 @@ describe('conflicting deps', function () {
 });
 
 describe('collect deps', function () {
-    test('no deps', function() {
+    test('no deps', function () {
         const r = collectDependencies([])
         expect(r).toEqual(new Map());
     });
-    test('one package', function() {
+    test('one package', function () {
         const r = collectDependencies([
             {
                 path: 'p1',
@@ -402,7 +402,7 @@ describe('collect deps', function () {
         expect(r.has("baz")).toBe(true);
         expect(r.get("baz")?.get("Z")).toEqual(new Set(["p1"]))
     });
-    test('multi package', function() {
+    test('multi package', function () {
         const r = collectDependencies([
             {
                 path: 'p1',
@@ -522,6 +522,30 @@ describe('bomlint prune', function () {
                 foo: "13",
             },
             count: 0
+        });
+    });
+    test('prune recognizes package self', function () {
+        const r = pruneFromBom(
+            {
+                foo: "13",
+                gnu: "1313",
+                bar: "0"
+            },
+            [{
+                dependencies: {
+                    foo: "13"
+                }
+            },
+            {
+                name: "foo",
+                version: "13"
+            }]
+        );
+        expect(r).toEqual({
+            patchedBom: {
+                foo: "13",
+            },
+            count: 2
         });
     });
 });
