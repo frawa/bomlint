@@ -18,8 +18,7 @@
     "dist"
   ],
   "bin": {
-    "bomlint": "./dist/main.js",
-    "bomlintall": "./bin/bomlintall.sh"
+    "bomlint": "./dist/main.js"
   },
   "main": "./bin/bomlint",
   "scripts": {

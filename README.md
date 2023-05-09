@@ -127,7 +127,6 @@ Do not forget to edit the versions!
 - run script `bomlint:check` to apply versions to this package
 - repeat for other modules in your workspace
 
-You might want to use `bomlintall` to run `bomlint` against all `package.json` files in your git repository.
 
 
 
