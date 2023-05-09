@@ -58,16 +58,16 @@ describe('options', function () {
     describe('fix command', () => {
         it("nothing", () => {
             const command = parseOptions(nodeArgs(['fix']))
-            expect(command).toEqual(({ command: 'fix', files: [] }))
+            expect(command).toEqual(({ command: 'check', fix: true, files: [] }))
         });
         it("just a file", () => {
             const command = parseOptions(nodeArgs(['fix', 'file.txt']))
-            expect(command).toEqual({ command: 'fix', files: ['file.txt'] })
+            expect(command).toEqual({ command: 'check', fix: true, files: ['file.txt'] })
         });
         it("allow conflicts", () => {
             const command = parseOptions(nodeArgs(['fix', '--allow-conflicts', 'allow1,allow2', 'file.txt']))
             expect(command).toEqual({
-                command: 'fix',
+                command: 'check', fix: true,
                 allowConflicts: ['allow1', 'allow2'], 
                 files: ['file.txt']
             })
@@ -86,15 +86,7 @@ describe('options', function () {
         it("check two files", () => {
             const command = parseOptions(nodeArgs(['merge', '--bom', 'bom.file', 'file.txt', 'file2.txt']))
             expect(command).toEqual({ command: 'merge', bom: 'bom.file', files: ['file.txt', 'file2.txt'] })
-        });
-        it("allow conflicts", () => {
-            const command = parseOptions(nodeArgs(['merge', '--allow-conflicts', 'allow1,allow2', 'file.txt']))
-            expect(command).toEqual({
-                command: 'merge',
-                allowConflicts: ['allow1', 'allow2'], 
-                files: ['file.txt']
-            })
-        });
+        });        
     });
 
     describe('prune command', () => {

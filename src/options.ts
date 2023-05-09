@@ -1,10 +1,11 @@
 import { ParseOptions, createCommand, Command as CommanderCommand } from "commander";
 const myPackageJson = require("../package.json");
 
-export type Command = { command: 'check', files: string[], bom?: string, allowConflicts?: string[] }
-    | { command: 'fix', files: string[], bom?: string, allowConflicts?: string[] }
-    | { command: 'merge', files: string[], bom?: string, allowConflicts?: string[] }
-    | { command: 'prune', files: string[], bom?: string };
+export type Command = CheckCommand | MergeCommand | PruneCommand
+
+export type CheckCommand = { command: 'check', files: string[], bom?: string, allowConflicts?: string[], fix?: boolean }
+export type MergeCommand = { command: 'merge', files: string[], bom?: string }
+export type PruneCommand = { command: 'prune', files: string[], bom?: string };
 
 export function parseOptions(args: readonly string[]): Command | undefined {
     return parseOptions_(args)
@@ -40,7 +41,6 @@ function parseOptions_(args: readonly string[], writeOut?: (text: string) => voi
     const mergeCommand = configure(
         createCommand('merge')
             .description("Merges package dependencies into BOM")
-            .option("--allow-conflicts <dependencies>]", "Allow conflicts for the dependencies (comma-separated)")
             .argument("[<file...>]", "package.json file(s) to be processed", "package.json")
     )
 
@@ -67,7 +67,7 @@ function parseOptions_(args: readonly string[], writeOut?: (text: string) => voi
     } catch (err) {
         return undefined;
     }
-    
+
     const command = program1.args[0]
     const bom: string = program1.opts().bom
 
@@ -80,12 +80,11 @@ function parseOptions_(args: readonly string[], writeOut?: (text: string) => voi
         case 'fix': {
             const files = fixCommand.args
             const allowConflicts = fixCommand.opts().allowConflicts?.split(",")
-            return { command: 'fix', files, bom, allowConflicts };
+            return { command: 'check', files, bom, allowConflicts, fix: true };
         }
         case 'merge': {
             const files = mergeCommand.args
-            const allowConflicts = mergeCommand.opts().allowConflicts?.split(",")
-            return { command: 'merge', files, bom, allowConflicts };
+            return { command: 'merge', files, bom };
         }
         case 'prune': {
             const files = pruneCommand.args
