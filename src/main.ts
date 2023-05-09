@@ -7,124 +7,129 @@ import {
     checkForUpdatesFromBom,
     findBomPath,
     mergeIntoBom,
+    MissingPackagePath,
     PackageToCheck,
     pruneFromBom,
     StringDict
 } from "./bomlint";
+import { CheckCommand, MergeCommand, parseOptions, PruneCommand } from "./options";
+
 const { Command } = require("commander");
 const program = new Command();
 const myPackageJson = require("../package.json");
 const fs = require('fs')
 const path = require('path');
 
-program
-    .name("bomlint")
-    .version(myPackageJson.version)
-    .description("Checks package dependencies against BOM")
-    .option("--allow-conflicts <dependencies>]", "Allow conflicts for the dependencies (comma-separated)")
-    .option("--fix", "Apply bom file to package dependencies")
-    .option("--merge", "Add package dependencies to BOM file")
-    .option("--prune", "Remove redundant dependencies from BOM file")
-    .option("--bom <bomfile>", "Path to BOM file")
-    .argument("[<file...>]", "package.json file(s) to be checked/fixed", "package.json")
+const command = parseOptions(process.argv)
 
-program.parse(process.argv)
-
-const options = program.opts();
-
-const merge = options.merge ?? false; //process.argv.includes("--merge")
-const fix = options.fix ?? false; // process.argv.includes("--fix")
-const prune = options.prune ?? false;
-
-
-if ([merge, fix, prune].filter(f => f).length > 1) {
-    console.log("can use only one of merge, fix or prune");
+if (!command) {
     process.exit(1)
 }
 
 const cwd = process.cwd()
-const bomPath = options.bom ?? path.relative(cwd, findBomPath(cwd))
 
-if (!fs.existsSync(bomPath)) {
-    console.log(`No BOM file ${bomPath}.`)
-    process.exit(1)
+switch (command.command) {
+    case "check":
+        process.exit(doCheck(command))
+    case "merge":
+        process.exit(doMerge(command))
+    case "prune":
+        process.exit(doPrune(command))
 }
 
-console.log("Using BOM file " + bomPath);
-const bom = JSON.parse(fs.readFileSync(bomPath))
+function doCheck(check: CheckCommand): number {
+    const [bomPath, bomContent] = readBom(check.bom)
 
-const allowConflicts: Set<string> = new Set();
-if (options.allowConflicts) {
-    options.allowConflicts.split(",").forEach((ac: string) => allowConflicts.add(ac));
-    console.log("Allowing conflicts", Array.from(allowConflicts).sort());
+    const allowed: Set<string> = new Set();
+    if (check.allowConflicts) {
+        check.allowConflicts.forEach((ac: string) => allowed.add(ac));
+        console.log("Allowing conflicts", Array.from(allowed).sort());
+    }
+
+    const [packages, missing] = buildPackagesToCheck(check.files)
+
+    let exitCode = missing.length
+    packages.forEach(({ path, packageJson }) => {
+        if (!packageJson) {
+            exitCode += 1
+            return
+        }
+        console.log(`Linting ${path}`)
+        const { updates, patchedPackageJson } = checkForUpdatesFromBom(bomContent, packageJson)
+        if (updates.length > 0) {
+            if (check.fix ?? false) {
+                fs.writeFileSync(path, JSON.stringify(patchedPackageJson, null, 2))
+                console.log(`Updates written to ${path}.`, updates)
+            } else {
+                console.log(`Updates needed in ${path}.`, updates)
+                exitCode += 1
+            }
+        }
+    })
+
+    const conflictingDeps = checkForConflictingDeps(packages, allowed)
+    if (conflictingDeps.length > 0) {
+        console.log(`${conflictingDeps.length} conflicting dep(s) found :`)
+        conflictingDeps.forEach(conflictingDep => {
+            console.log(conflictingDep.dependency, conflictingDep.conflicts.map(c => [c.version, c.pkg.path]))
+        });
+        exitCode += 1
+    }
+
+    return exitCode > 0 ? 1 : 0
 }
 
-const pathsArg: string[] = program.args.length > 0 ? program.args : ["package.json"];
+function doMerge(merge: MergeCommand): number {
+    const [bomPath, bomContent] = readBom(merge.bom)
+    const [packages, missing] = buildPackagesToCheck(merge.files)
+    const r = mergeIntoBom(packages, bomContent);
+    if (r.count > 0) {
+        fs.writeFileSync(bomPath, JSON.stringify(r.patchedBom, null, 2))
+        console.log(`Merges written to BOM ${bomPath}.`)
+    } else {
+        console.log(`No merges needed.`)
+    }
+    return missing.length > 0 ? 1 : 0
+}
 
-if (prune) {
-    const packageJsons = pathsArg.map(arg => path.relative(cwd, arg))
+function doPrune(prune: PruneCommand): number {
+    const [bomPath, bomContent] = readBom(prune.bom)
+    const packageJsons = prune.files.map(arg => path.relative(cwd, arg))
     console.log(`Pruning from BOM ${bomPath}, considering ${packageJsons.join(", ")}.`)
-    const r = pruneFromBom(bom, packageJsons)
+    const r = pruneFromBom(bomContent, packageJsons)
     if (r.count > 0) {
         fs.writeFileSync(bomPath, JSON.stringify(r.patchedBom, null, 2))
         console.log(`Pruned BOM written to ${bomPath}.`)
     } else {
         console.log(`No update needed.`)
     }
-    process.exit(0)
+    return 0
 }
 
-let exitCode = 0;
-
-let packagesToCheck: PackageToCheck[] = [];
-
-pathsArg.forEach(pathArg => {
-    const packageJsonPath = path.relative(cwd, pathArg)
-
-    if (!fs.existsSync(packageJsonPath)) {
-        console.log(`No package file ${packageJsonPath}.`)
+function readBom(bom?: string): [string, StringDict] {
+    const bomPath = bom ?? path.relative(cwd, findBomPath(cwd))
+    if (!fs.existsSync(bomPath)) {
+        console.log(`No BOM file ${bomPath}.`)
         process.exit(1)
     }
-
-    const packageJson = JSON.parse(fs.readFileSync(packageJsonPath))
-
-    packagesToCheck.push({
-        path: pathArg,
-        packageJson: packageJson
-    });
-
-    if (merge) {
-        console.log(`Merging ${packageJsonPath} into BOM ${bomPath}.`)
-        const r = mergeIntoBom(packageJson, bom);
-        if (r.count > 0) {
-            fs.writeFileSync(bomPath, JSON.stringify(r.patchedBom, null, 2))
-            console.log(`Merges written to BOM ${bomPath}.`)
-        } else {
-            console.log(`No merges needed.`)
-        }
-    } else {
-        console.log(`Linting ${packageJsonPath}`)
-        const { updates, patchedPackageJson } = checkForUpdatesFromBom(bom, packageJson)
-
-        if (updates.length > 0) {
-            if (fix) {
-                fs.writeFileSync(packageJsonPath, JSON.stringify(patchedPackageJson, null, 2))
-                console.log(`Updates written to ${packageJsonPath}.`, updates)
-            } else {
-                console.log(`Updates needed in ${packageJsonPath}.`, updates)
-                exitCode = 1;
-            }
-        }
-    }
-});
-
-const conflictingDeps = checkForConflictingDeps(packagesToCheck, allowConflicts);
-if (conflictingDeps.length > 0) {
-    console.log(`${conflictingDeps.length} conflicting dep(s) found :`);
-    conflictingDeps.forEach(conflictingDep => {
-        console.log(conflictingDep.dependency, conflictingDep.conflicts.map(c => [c.version, c.pkg.path]));
-    });
-    exitCode = 1;
+    console.log("Using BOM file " + bomPath)
+    return [bomPath, JSON.parse(fs.readFileSync(bomPath))]
 }
 
-process.exit(exitCode);
+function buildPackagesToCheck(files: string[]): [PackageToCheck[], MissingPackagePath[]] {
+    const missing: MissingPackagePath[] = []
+    const packages: PackageToCheck[] = []
+    files.forEach(file => {
+        const packagePath = path.relative(cwd, file)
+        if (!fs.existsSync(packagePath)) {
+            console.log(`No package file ${packagePath}.`)
+            missing.push(packagePath)
+        } else {
+            packages.push(<PackageToCheck>{
+                path: packagePath,
+                packageJson: JSON.parse(fs.readFileSync(packagePath))
+            })
+        }
+    })
+    return [packages, missing]
+}
