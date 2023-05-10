@@ -14,6 +14,8 @@ export interface PackageToCheck {
     readonly packageJson: IPackageJson;
 }
 
+export type MissingPackagePath = string
+
 export interface DependencyConflict {
     readonly pkg: PackageToCheck;
     readonly version: string;
