@@ -94,8 +94,12 @@ function doMerge(merge: MergeCommand): number {
 
 function doPrune(prune: PruneCommand): number {
     const [bomPath, bomContent] = readBom(prune.bom)
-    const packageJsons = prune.files.map(arg => path.relative(cwd, arg))
-    console.log(`Pruning from BOM ${bomPath}, considering ${packageJsons.join(", ")}.`)
+
+    const [packages, missing] = buildPackagesToCheck(prune.files)
+    const paths = packages.map(p => p.path)
+    const packageJsons = packages.map(p => p.packageJson)
+
+    console.log(`Pruning from BOM ${bomPath}, considering ${paths.join(", ")}.`)
     const r = pruneFromBom(bomContent, packageJsons)
     if (r.count > 0) {
         fs.writeFileSync(bomPath, JSON.stringify(r.patchedBom, null, 2))
@@ -103,7 +107,8 @@ function doPrune(prune: PruneCommand): number {
     } else {
         console.log(`No update needed.`)
     }
-    return 0
+
+    return missing.length > 0 ? 1 : 0
 }
 
 function readBom(bom?: string): [string, StringDict] {
