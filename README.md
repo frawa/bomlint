@@ -15,8 +15,8 @@ Usage in `package.json`:
 
 ```
 "scripts" {
-    "bomlint": "bomlint",
-    "bomlint:fix": "bomlint --fix"
+    "bomlint": "bomlint check",
+    "bomlint:fix": "bomlint fix"
 },
 ```
 
@@ -44,12 +44,11 @@ which can be useful in mono-repos :
 ```
 // in root package.json
 "scripts" {
-    "bomlint": "bomlint package.json ./core/package.json ./sample/package.json",
+    "bomlint": "bomlint check package.json ./core/package.json ./sample/package.json",
 },
 ```
 
-
-`bomlint` also checks for "conflicting" dependencies in your package.json files. It
+`bomlint` also checks for "conflicting" dependencies in your `package.json` files. It
 looks for dependencies declared more than once, with different versions :
 
 ```
@@ -90,21 +89,24 @@ The config is a JSON object with string properties, like a package.json's `depen
 
 Those are the versions of the packages you want to align.
 
-## --fix
+## fix
 
-`bomlint` can fix the BOM errors for you, by passing the `--fix` option. 
+`bomlint` can fix the BOM errors for you, by using the `fix` command. 
 It will then change the versions in your package.json files according to the one 
 set in the BOM file, if any.
 
-This option only touches your package.json files.
+This option only touches your `package.json` files.
 
-## --merge
+## merge
 
-Merge will change the BOM file and add versions found in the package.json files.
-It's the inverse of `--fix`.
+Merge will change the BOM file and add versions found in the `package.json` files.
+It's the inverse of `fix`.
 
 > This changes your dependency versions in the BOM file : handle with care !
 
+## purge
+
+The `purge` command will remove versions from the BOM file that are no longer used by any of the `package.json` files.
 
 ## Draft your initial `.bomlint.json` file
 
@@ -122,11 +124,16 @@ Do not forget to edit the versions!
 - create your initial `.bomlint.json` file with dependencies you want to align across modules
 - enable `bomlint` for your first package (see above)
 
-- run script `bomlint` to check alignment
-- if versions differ, use `bomlint --merge` and edit `.bomlint.json` to keep only the versions you want
-- run script `bomlint:check` to apply versions to this package
+- run `bomlint check` to check alignment
+- if versions differ, use `bomlint merge` and edit `.bomlint.json` to keep only the versions you want
+- run `bomlint fix` to apply versions to this package
 - repeat for other modules in your workspace
 
-
+You can handle several package.json files at a time passing them to bomlint commands.
+At the root folder of your workspace, for example use
+- `bomlint check $(git ls-files --cached | grep package.json)`
+- `bomlint fix $(git ls-files --cached | grep package.json)`
+- `bomlint merge $(git ls-files --cached | grep package.json)`
+- `bomlint purge $(git ls-files --cached | grep package.json)`
 
 
