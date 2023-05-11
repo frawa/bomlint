@@ -78,6 +78,9 @@ The tool looks for a `.bomlint.json` file in the current folder, and will
 look into parents like it's done for `.gitignore`, `.npmrc` and the like. 
 A path to the config file can be passed if needed (`--bom <bomfile>` command line option).
 
+You can share your bom file as a Node module between different repositories, `--bom <module>` will
+solve the file `bomlint.json` from `<module>`, which you added to your `devDependencies`.
+
 The config is a JSON object with string properties, like a package.json's `dependencies` section :
 
 ```
