@@ -112,13 +112,7 @@ function doPrune(prune: PruneCommand): number {
 }
 
 function readBom(bom?: string): [string, StringDict] {
-    try {
-        const fw = bom && require.resolve(`${bom}/bomlint.json`)
-        console.log("FW ", fw)
-    } catch (err) {
-        console.log("FW ignore", err)
-    }
-    const bomPath0 = bom && resolveBomPath(bom)    
+    const bomPath0 = bom && resolveBomPath(bom)
     const bomPath = bomPath0 ?? (bom ?? path.relative(cwd, findBomPath(cwd)))
     if (!fs.existsSync(bomPath)) {
         console.log(`No BOM file ${bomPath}.`)
@@ -134,7 +128,7 @@ function resolveBomPath(bom: string): string | undefined {
         return path
     } catch (err) {
         return undefined
-    }    
+    }
 }
 
 function buildPackagesToCheck(files: string[]): [PackageToCheck[], MissingPackagePath[]] {
