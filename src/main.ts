@@ -124,7 +124,7 @@ function readBom(bom?: string): [string, StringDict] {
 
 function resolveBomPath(bom: string): string | undefined {
     try {
-        const path = require.resolve(`${bom}/bomlint.json`)
+        const path = require.resolve(`${bom}/bomlint.json`, { paths: [cwd] })
         return path
     } catch (err) {
         return undefined
