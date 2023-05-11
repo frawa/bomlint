@@ -73,23 +73,27 @@ function parseOptions_(args: readonly string[], writeOut?: (text: string) => voi
 
     switch (command) {
         case 'check': {
-            const files = checkCommand.args
+            const files = filesOrDefault(checkCommand.args)
             const allowConflicts: string[] = checkCommand.opts().allowConflicts?.split(",")
             return { command: 'check', files, bom, allowConflicts };
         }
         case 'fix': {
-            const files = fixCommand.args
+            const files = filesOrDefault(fixCommand.args)
             const allowConflicts = fixCommand.opts().allowConflicts?.split(",")
             return { command: 'check', files, bom, allowConflicts, fix: true };
         }
         case 'merge': {
-            const files = mergeCommand.args
+            const files = filesOrDefault(mergeCommand.args)
             return { command: 'merge', files, bom };
         }
         case 'prune': {
-            const files = pruneCommand.args
+            const files = filesOrDefault(pruneCommand.args)
             return { command: 'prune', files, bom };
         }
     }
     return undefined;
+}
+
+function filesOrDefault(args: string[]): string[] {
+    return args.length > 0 ? args : ["package.json"]
 }
