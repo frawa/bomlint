@@ -6,24 +6,24 @@ describe('options', function () {
 
     describe('help', () => {
         it("global help", () => {
-            const [command,output] = parseOptionsWithOutput(nodeArgs(['--help']))
+            const [command, output] = parseOptionsWithOutput(nodeArgs(['--help']))
             expect(output).toMatch(/^Usage: bomlint/)
         });
         it("global help command", () => {
-            const [command,output] = parseOptionsWithOutput(nodeArgs(['help']))
+            const [command, output] = parseOptionsWithOutput(nodeArgs(['help']))
             expect(output).toMatch(/^Usage: bomlint/)
         });
         it("check help", () => {
-            const [command,output] = parseOptionsWithOutput(nodeArgs(['help', 'check']))
+            const [command, output] = parseOptionsWithOutput(nodeArgs(['help', 'check']))
             expect(output).toMatch(/^Usage: bomlint check/)
         });
         it("unkown", () => {
-            const [command,output] = parseOptionsWithOutput(nodeArgs(['--boom']))
+            const [command, output] = parseOptionsWithOutput(nodeArgs(['--boom']))
             expect(output).toMatch(/^error: unknown option '--boom'/)
             expect(output).toMatch(/Usage: bomlint/)
         });
         it("nothing", () => {
-            const [command,output] = parseOptionsWithOutput(nodeArgs([]))
+            const [command, output] = parseOptionsWithOutput(nodeArgs([]))
             expect(output).toMatch(/^Usage: bomlint/)
         });
     });
@@ -31,7 +31,7 @@ describe('options', function () {
     describe('check command', () => {
         it("no file", () => {
             const command = parseOptions(nodeArgs(['check']))
-            expect(command).toEqual<Command>({ command: 'check', files: [] })
+            expect(command).toEqual<Command>({ command: 'check', files: ['package.json'] })
         });
         it("just a file", () => {
             const command = parseOptions(nodeArgs(['check', 'file.txt']))
@@ -49,7 +49,7 @@ describe('options', function () {
             const command = parseOptions(nodeArgs(['check', '--allow-conflicts', 'allow1,allow2', 'file.txt']))
             expect(command).toEqual<Command>({
                 command: 'check',
-                allowConflicts: ['allow1', 'allow2'], 
+                allowConflicts: ['allow1', 'allow2'],
                 files: ['file.txt']
             })
         });
@@ -58,7 +58,7 @@ describe('options', function () {
     describe('fix command', () => {
         it("nothing", () => {
             const command = parseOptions(nodeArgs(['fix']))
-            expect(command).toEqual(({ command: 'check', fix: true, files: [] }))
+            expect(command).toEqual(({ command: 'check', fix: true, files: ['package.json'] }))
         });
         it("just a file", () => {
             const command = parseOptions(nodeArgs(['fix', 'file.txt']))
@@ -68,7 +68,7 @@ describe('options', function () {
             const command = parseOptions(nodeArgs(['fix', '--allow-conflicts', 'allow1,allow2', 'file.txt']))
             expect(command).toEqual({
                 command: 'check', fix: true,
-                allowConflicts: ['allow1', 'allow2'], 
+                allowConflicts: ['allow1', 'allow2'],
                 files: ['file.txt']
             })
         });
@@ -77,7 +77,7 @@ describe('options', function () {
     describe('merge command', () => {
         it("nothing", () => {
             const command = parseOptions(nodeArgs(['merge']))
-            expect(command).toEqual(({ command: 'merge', files: [] }))
+            expect(command).toEqual(({ command: 'merge', files: ['package.json'] }))
         });
         it("just a file", () => {
             const command = parseOptions(nodeArgs(['merge', '--bom', 'bom.file', 'file.txt']))
@@ -86,13 +86,13 @@ describe('options', function () {
         it("check two files", () => {
             const command = parseOptions(nodeArgs(['merge', '--bom', 'bom.file', 'file.txt', 'file2.txt']))
             expect(command).toEqual({ command: 'merge', bom: 'bom.file', files: ['file.txt', 'file2.txt'] })
-        });        
+        });
     });
 
     describe('prune command', () => {
         it("nothing", () => {
             const command = parseOptions(nodeArgs(['prune']))
-            expect(command).toEqual(({ command: 'prune', files: [] }))
+            expect(command).toEqual(({ command: 'prune', files: ['package.json'] }))
         });
         it("just a file", () => {
             const command = parseOptions(nodeArgs(['prune', '--bom', 'bom.file', 'file.txt']))
