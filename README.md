@@ -1,3 +1,5 @@
+[![build](https://github.com/frawa/bomlint/actions/workflows/npm-build.yml/badge.svg)](https://github.com/frawa/bomlint/actions/workflows/npm-build.yml)
+
 # bomlint
 
 Features
