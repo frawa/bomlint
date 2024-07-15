@@ -149,7 +149,18 @@ export function checkForUpdatesFromBom(bom: StringDict, packageJson: IPackageJso
 }
 
 function hasDifferentVersion(deps: any, pkg: string, version: string) {
-    return deps && deps[pkg] && deps[pkg] !== version
+    return deps && deps[pkg] && !acceptVersion(deps[pkg], version)
+}
+
+function acceptVersion(actual: string, expected: string): boolean {
+    return expected === actual || acceptOrVersion(actual, expected);
+}
+
+function acceptOrVersion(actual: string, expected: string): boolean {
+    if (expected.indexOf("||") >= 0) {
+        return expected.split("||").map(v => v.trim()).some(e => e === actual);
+    }
+    return false;
 }
 
 export interface MergeResult {
