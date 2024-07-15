@@ -118,8 +118,21 @@ describe('bomlint check', function () {
         expect(r.patchedPackageJson?.peerDependencies?.baz).toEqual("Z");
     });
     test('failing dups in same package', function () {
-        const r = checkForUpdatesFromBom(
+        expectSuccess(
             {},
+            {
+                dependencies: {
+                    "foo": "X"
+                },
+                devDependencies: {
+                    "foo": "YY"
+                }
+            }
+        );
+    })
+    test('support or-versions', function () {
+        expectSuccess(
+            {"foo": "X || Y"},
             {
                 dependencies: {
                     "foo": "X"
