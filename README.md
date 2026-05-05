@@ -1,4 +1,5 @@
 [![build](https://github.com/frawa/bomlint/actions/workflows/npm-build.yml/badge.svg)](https://github.com/frawa/bomlint/actions/workflows/npm-build.yml)
+[![npm version](https://img.shields.io/npm/v/bomlint.svg?style=flat)](https://npmjs.org/package/bomlint)
 
 # bomlint
 
